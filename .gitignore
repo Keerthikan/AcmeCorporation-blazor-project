@@ -1,0 +1,24 @@
+# Build output
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.user
+*.vs/
+*.vscode/
+
+# Rider / JetBrains
+.idea/
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.cache
+

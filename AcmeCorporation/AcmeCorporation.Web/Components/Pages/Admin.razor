@@ -1,0 +1,120 @@
+@page "/Admin"
+@using AcmeCorporation.Core.Models
+@using AcmeCorporation.Core.Services
+@using Microsoft.AspNetCore.Authorization
+@rendermode InteractiveServer
+@inject ISerialService SerialService
+@inject IFormService FormService
+@attribute [Authorize]
+
+<MudPaper Class="pa-4">
+
+    <!-- Profile section -->
+    <section class="profile mb-6">
+        <img src="/images/roadrunner.png" width="100"  alt=""/> <!-- Figure out why it does not work with MudAvatar -->
+        <MudText Typo="Typo.h5" Class="mt-2">Road Runner</MudText>
+        <MudText Typo="Typo.subtitle2">Competition Administrator</MudText>
+    </section>
+
+    <!-- Serial numbers table -->
+    <MudTable T="SerialNumberInfo" Items="_validSerials"
+              Hover="true"
+              Bordered="true"
+              Striped="true"
+              RowsPerPage="_pageSize"
+              Elevation="1"
+              SortLabel="Sort">
+
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Valid Serial Numbers</MudText>
+            <MudSpacer />
+            <MudSelect T="int" Label="Show per page" @bind-Value="_pageSize">
+                <MudSelectItem Value="5">5</MudSelectItem>
+                <MudSelectItem Value="10">10</MudSelectItem>
+                <MudSelectItem Value="25">25</MudSelectItem>
+            </MudSelect>
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh SortBy="@((SerialNumberInfo s) => s.SerialNumber)">Serial Number</MudTh>
+            <MudTh SortBy="@((SerialNumberInfo s) => s.IsUsed)">Used</MudTh>
+            <MudTh SortBy="@((SerialNumberInfo s) => s.UsedAt)">Used At</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd DataLabel="Serial Number">@context.SerialNumber</MudTd>
+            <MudTd DataLabel="Used">@((context.IsUsed) ? "Yes" : "No")</MudTd>
+            <MudTd DataLabel="Used At">@((context.UsedAt.HasValue) ? context.UsedAt.Value.ToString("yyyy-MM-dd HH:mm") : "—")</MudTd>
+        </RowTemplate>
+
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+
+    </MudTable>
+    
+    <!-- Submissions table -->
+    <MudTable T="FormSubmission" Items="_submissions"
+              Hover="true"
+              Bordered="true"
+              Striped="true"
+              RowsPerPage="_pageSize"
+              Elevation="1"
+              SortLabel="Sort">
+
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Submissions</MudText>
+            <MudSpacer />
+            <MudSelect T="int" Label="Show per page" @bind-Value="_pageSize">
+                <MudSelectItem Value="5">5</MudSelectItem>
+                <MudSelectItem Value="10">10</MudSelectItem>
+                <MudSelectItem Value="25">25</MudSelectItem>
+            </MudSelect>
+        </ToolBarContent>
+        
+        <HeaderContent>
+            <MudTh SortBy="@((FormSubmission s) => s.FirstName)">First Name</MudTh>
+            <MudTh SortBy="@((FormSubmission s) => s.LastName)">Last Name</MudTh>
+            <MudTh SortBy="@((FormSubmission s) => s.EmailAddress)">Email</MudTh>
+            <MudTh SortBy="@((FormSubmission s) => s.ProductSerialNumber)">Serial Number</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd DataLabel="First Name">@context.FirstName</MudTd>
+            <MudTd DataLabel="Last Name">@context.LastName</MudTd>
+            <MudTd DataLabel="Email">@context.EmailAddress</MudTd>
+            <MudTd DataLabel="Serial">@context.ProductSerialNumber</MudTd>
+        </RowTemplate>
+
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+
+    </MudTable>
+
+    @if (_isLoading)
+    {
+        <MudText Typo="Typo.body1" Class="mt-4">Loading...</MudText>
+    }
+    else if (!_validSerials.Any())
+    {
+        <MudText Typo="Typo.body1" Class="mt-4">There are no registered serial numbers.</MudText>
+    }
+
+</MudPaper>
+
+@code {
+    private List<SerialNumberInfo> _validSerials = [];
+    private List<FormSubmission> _submissions = [];
+    private bool _isLoading = true;
+    private int _pageSize = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = await SerialService.GetAllValidSerialNumbers();
+        _validSerials = items.OrderBy(s => s.SerialNumber).ToList();
+        var submissions = await FormService.GetAllParticipantsAsync();
+        _submissions = submissions.OrderBy(s => s.Id).ToList();
+        _isLoading = false;
+    }
+}

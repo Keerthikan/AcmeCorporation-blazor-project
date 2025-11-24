@@ -1,0 +1,51 @@
+/* Container for the page content */
+.site-content {
+    max-width: 1200px;  /* Wider page */
+    margin: 0 auto;
+    padding: 1rem;
+    text-align: center;
+}
+
+/* Intro text */
+.intro-text {
+    margin-bottom: 1rem;
+}
+
+/* Serial input form */
+.serial-form {
+    display: inline-block;
+    margin: 1rem auto;
+    text-align: left;
+}
+
+/* Section spacing for testimonials */
+.testimonials-section {
+    margin-top: 3rem; /* more space from preceding content */
+}
+
+/* "What you can win" section */
+.win-section {
+    margin: 3rem 0;
+}
+
+
+/* Buttons / call-to-action adjustments */
+.cta-button {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .testimonial-carousel {
+        height: auto;
+    }
+    .site-content {
+        padding: 1rem;
+    }
+    .serial-form {
+        width: 100%;
+    }
+}

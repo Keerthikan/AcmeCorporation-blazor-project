@@ -1,0 +1,26 @@
+﻿@inherits LayoutComponentBase
+@using MudBlazor
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudLayout Class="grid-layout">
+    <MudAppBar Elevation="4" Color="Color.Primary" Class="header">
+        <MudText Typo="Typo.h6">Acme Corporation</MudText>
+        <MudSpacer />
+        <MudButton Link="/" Color="Color.Inherit">Home</MudButton>
+        <MudButton Link="/products" Color="Color.Inherit">Produkter</MudButton>
+        <MudButton Link="/services" Color="Color.Inherit">Services</MudButton>
+        <MudButton Link="/contact" Color="Color.Inherit">Kontakt</MudButton>
+    </MudAppBar>
+
+    <MudMainContent Class="content">
+        @Body
+    </MudMainContent>
+
+    <MudPaper Square Elevation="4" Class="footer mud-width-full mud-text-center mud-pa-4">
+        <MudText Typo="Typo.body2">&copy; @DateTime.Now.Year Acme Corporation</MudText>
+    </MudPaper>
+</MudLayout>

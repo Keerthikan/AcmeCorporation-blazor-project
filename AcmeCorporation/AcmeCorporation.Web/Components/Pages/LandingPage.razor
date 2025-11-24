@@ -1,0 +1,212 @@
+@page "/landingpage"
+@using System.Text.RegularExpressions
+@using AcmeCorporation.Core.Models
+@using AcmeCorporation.Core.Services
+@inject ISerialService SerialService
+@inject IFormService FormService
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<main class="site-content">
+    <h2 class="intro-text">Welcome to the Acme competition!</h2>
+    <p class="intro-text">
+        Have you purchased a product from Acme Corporation? Enter your serial number below
+        to see if you are one of the lucky winners.
+    </p>
+
+    <!-- Serial number input -->
+    <MudPaper Class="pa-4 mb-4">
+        <MudTextField Label="Serial Number"
+                      @bind-Value="serialModel.SerialNumber"
+                      Immediate="true"
+                      Validation="ValidateSerialFormat"
+                      TextChanged="OnSerialChanged"
+                      Placeholder="Enter serial number e.g. Win+42" />
+
+        @if (!string.IsNullOrWhiteSpace(serialModel.SerialNumber) && !serialValid)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Error" Class="mt-2">
+                The serial number is invalid.
+            </MudText>
+        }
+    </MudPaper>
+
+    <!-- User info form (shows only if serial is valid) -->
+    @if (serialValid && !formSubmitted)
+    {
+        <!-- Age disclaimer -->
+        <MudPaper Class="pa-4 mb-2">
+            <MudText Typo="Typo.body2" Color="Color.Primary">
+                Note: To enter the competition, you must be at least 18 years old.
+            </MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-2">Enter your information to participate</MudText>
+            <MudForm @ref="userForm">
+                <MudTextField @bind-Value="userModel.FirstName" Label="First Name" Immediate="true" />
+                <MudTextField @bind-Value="userModel.LastName" Label="Last Name" Immediate="true" />
+                <MudTextField @bind-Value="userModel.Email" Label="Email" Immediate="true" />
+                <MudTextField @bind-Value="userModel.SerialNumber" Label="Serial Number" Disabled="true" />
+
+                <MudButton ButtonType="ButtonType.Button"
+                           Color="Color.Success"
+                           OnClick="SubmitForm">
+                    Submit
+                </MudButton>
+            </MudForm>
+        </MudPaper>
+    }
+
+    <!-- Prize section -->
+    <section class="prize-section my-6">
+        <MudDivider Class="my-4" />
+        <h3>Win amazing Acme sneakers!</h3>
+        <p>
+            Each lucky winner will receive a pair of super fast Acme sneakers – perfect for
+            chasing the Road Runner!
+        </p>
+        <MudImage Src="images/sneakers.webp"
+                  Alt="Acme sneakers"
+                  MaxWidth="250px"
+                  Class="my-4" />
+    </section>
+
+    <!-- Testimonials carousel -->
+    <MudCarousel TData="Testimonial"
+                 ItemsSource="@testimonials"
+                 Class="mud-width-full testimonial-carousel"
+                 Style="height:220px;"
+                 ShowArrows="true"
+                 ShowBullets="false"
+                 EnableSwipeGesture="true"
+                 AutoCycle="true">
+        <ItemTemplate>
+            <div class="d-flex flex-column justify-center align-center"
+                 style="height:100%; padding:1rem;">
+                <blockquote style="max-width:700px; text-align:center; font-size:1.1rem;">
+                    "<i>@context.Text</i>"
+                    <footer style="margin-top:0.5rem; font-weight:bold;">
+                        – @context.Author
+                    </footer>
+                </blockquote>
+            </div>
+        </ItemTemplate>
+    </MudCarousel>
+</main>
+
+@code {
+    private bool formSubmitted = false;
+    private SerialInput serialModel = new();
+    private UserInput userModel = new();
+    private bool serialValid = false;
+    private MudForm? userForm;
+    private static readonly Regex SerialRegex = new(@"^Win\+(\d{1,3})$", RegexOptions.Compiled);
+
+    public List<Testimonial> testimonials = new()
+    {
+        new Testimonial { Author = "Cousin Coyote", Text = "I’ve never caught the Road Runner, but Acme’s rocket roller skates almost got me there!" },
+        new Testimonial { Author = "Uncle Coyote", Text = "Acme’s spring catapult gave me the best flight ever." },
+        new Testimonial { Author = "Sister Coyote", Text = "I love how creative Acme is—even though I still end up in the canyon." }
+    };
+
+    public class SerialInput
+    {
+        public string SerialNumber { get; set; } = string.Empty;
+    }
+
+    public class UserInput
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string SerialNumber { get; set; } = string.Empty;
+    }
+
+    public class Testimonial
+    {
+        public string Author { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+    }
+
+    private async Task SubmitForm()
+    {
+        if (userForm is null)
+            return;
+
+        await userForm.Validate();
+
+        if (!userForm.IsValid)
+            return;
+
+        var submission = new FormSubmission(
+            Id: 0,
+            FirstName: userModel.FirstName,
+            LastName: userModel.LastName,
+            EmailAddress: userModel.Email,
+            ProductSerialNumber: userModel.SerialNumber
+        );
+
+        var success = await FormService.SubmitFormAsync(submission);
+
+        if (success)
+        {
+            await SerialService.MarkAsUsedAsync(userModel.SerialNumber);
+            formSubmitted = true;
+
+            Snackbar.Add("Thank you for your submission! You will hear from us shortly.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("An error occurred during submission.", Severity.Error);
+        }
+    }
+    
+    // Called whenever text changes in the serial input
+    private async Task OnSerialChanged(string value)
+    {
+        var errors = await ValidateSerialFormat(value);
+        serialValid = !errors.Any();
+        
+        if (serialValid)
+        {
+            userModel.SerialNumber = value;
+        }
+    }
+
+    // Validator: serial must be Win+0–Win+100
+    // Validator: serial must be Win+0–Win+100 + DB check
+    private async Task<IEnumerable<string>> ValidateSerialFormat(string value)
+    {
+        List<string> errors = new();
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            errors.Add("Serial number must not be empty");
+            return errors;
+        }
+
+        var match = SerialRegex.Match(value);
+        if (!match.Success)
+        {
+            errors.Add("Serial number must start with 'Win+' followed by a number between 0 and 100");
+            return errors;
+        }
+
+        if (int.TryParse(match.Groups[1].Value, out var number))
+        {
+            if (number < 0 || number > 100)
+            {
+                errors.Add("The number in the serial must be between 0 and 100");
+                return errors;
+            }
+        }
+        else
+        {
+            errors.Add("Invalid serial number");
+            return errors;
+        }
+
+        return errors;
+    }
+}

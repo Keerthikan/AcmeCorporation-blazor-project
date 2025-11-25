@@ -1,4 +1,3 @@
-help me expand this 
 # AcmeCorporation
 
 A modular Blazor Web App built with **.NET 10** and backed by **PostgreSQL**.  
@@ -56,3 +55,35 @@ This solution follows a clean architecture approach, separating concerns into Co
 4. **Run the Blazor Web App**
    ```bash
    dotnet run --project AcmeCorporation.Web
+
+
+ ---
+ ## How to apply migrations? ##
+ 1. **Verify PostgreSQL Installation**
+    ```bash
+    psql --version
+
+ If not installed -  please follow - [PostgreSQL 15+](https://www.postgresql.org/download/) and try again. 
+
+ If installed, please enter it by running this command
+ 2. Connect to Postgresql
+    ```bash
+    psql -U postgres
+
+ 3. Create two databases - one for business logic the other one for Identity
+    ```bash 
+    CREATE DATABASE my_app_db;
+    CREATE DATABASE my_idp_db;
+
+ 4. Adjust appsetting.json with the new connectionstring
+    ```bash 
+    "ConnectionStrings": {
+      "BusinessDb": "Host=localhost;Port=5432;Database=my_app_db;Username=postgres;Password=postgres",
+      "IdentityDb": "Host=localhost;Port=5432;Database=my_idp_db;Username=postgres;Password=postgres"
+    },
+
+ 
+
+ ---
+ ## How to apply migrations created that is part of this repo? ##
+ 

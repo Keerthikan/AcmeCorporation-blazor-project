@@ -81,9 +81,7 @@ This solution follows a clean architecture approach, separating concerns into Co
       "BusinessDb": "Host=localhost;Port=5432;Database=my_app_db;Username=postgres;Password=postgres",
       "IdentityDb": "Host=localhost;Port=5432;Database=my_idp_db;Username=postgres;Password=postgres"
     },
+ 5. Once the databases has been setup the migration can be applied on to them, so the schema and tables will be setup. 
+    ```bash
+    dotnet ef database update --project AcmeCorporation.Data --startup-project AcmeCorporation.Web
 
- 
-
- ---
- ## How to apply migrations created that is part of this repo? ##
- 

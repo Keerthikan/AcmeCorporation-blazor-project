@@ -46,13 +46,13 @@ This solution follows a clean architecture approach, separating concerns into Co
    git clone <repo-url>
    cd AcmeCorporation
 
-2. **Restore dependencies
+2. **Restore dependencies**
    ```bash
    dotnet restore
-3. **Build the solution
+3. **Build the solution**
    ```bash
    dotnet build
 
-4. **Run the Blazor Web App
+4. **Run the Blazor Web App**
    ```bash
    dotnet run --project AcmeCorporation.Web

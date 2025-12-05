@@ -7,4 +7,5 @@ public class BusinessDbContext(DbContextOptions<BusinessDbContext> options) : Db
 {
     public DbSet<Participant> Participants { get; set; }
     public DbSet<EligibleDrawSerial>  EligibleDrawSerials { get; set; }
+    public DbSet<SystemSetting> SystemSettings { get; set; } 
 }

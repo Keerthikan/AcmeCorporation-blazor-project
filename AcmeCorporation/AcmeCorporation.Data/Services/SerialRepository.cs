@@ -31,7 +31,7 @@ public class SerialRepository : ISerialRepository
 
         if (item.IsUsed)
             return false; 
-
+    
         item = item with { IsUsed = true };
         item = item with { UsedAt = DateTime.UtcNow };
 

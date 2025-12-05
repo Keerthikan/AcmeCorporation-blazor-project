@@ -3,6 +3,7 @@ using System;
 using AcmeCorporation.Data.Databases;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AcmeCorporation.Data.Databases.Migrations.Business
 {
     [DbContext(typeof(BusinessDbContext))]
-    partial class BusinessDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251204224739_AddSystemSettings")]
+    partial class AddSystemSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,7 +38,7 @@ namespace AcmeCorporation.Data.Databases.Migrations.Business
 
                     b.HasKey("SerialNumber");
 
-                    b.ToTable("EligibleDrawSerials", (string)null);
+                    b.ToTable("EligibleDrawSerials");
                 });
 
             modelBuilder.Entity("AcmeCorporation.Data.Entities.Participant", b =>
@@ -64,7 +67,7 @@ namespace AcmeCorporation.Data.Databases.Migrations.Business
 
                     b.HasKey("Id");
 
-                    b.ToTable("Participants", (string)null);
+                    b.ToTable("Participants");
                 });
 
             modelBuilder.Entity("AcmeCorporation.Data.Entities.SystemSetting", b =>
@@ -83,7 +86,7 @@ namespace AcmeCorporation.Data.Databases.Migrations.Business
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemSettings", (string)null);
+                    b.ToTable("SystemSettings");
                 });
 #pragma warning restore 612, 618
         }

@@ -5,6 +5,8 @@
 @inject ISerialService SerialService
 @inject IFormService FormService
 @inject ISnackbar Snackbar
+@inject IAdminService AdminService
+@inject IJSRuntime JS
 @using MudBlazor
 
 <main class="site-content">
@@ -34,7 +36,6 @@
     <!-- User info form (shows only if serial is valid) -->
     @if (serialValid && !formSubmitted)
     {
-        <!-- Age disclaimer -->
         <MudPaper Class="pa-4 mb-2">
             <MudText Typo="Typo.body2" Color="Color.Primary">
                 Note: To enter the competition, you must be at least 18 years old.
@@ -47,6 +48,12 @@
                 <MudTextField @bind-Value="userModel.FirstName" Label="First Name" Immediate="true" />
                 <MudTextField @bind-Value="userModel.LastName" Label="Last Name" Immediate="true" />
                 <MudTextField @bind-Value="userModel.Email" Label="Email" Immediate="true" />
+
+                <MudDatePicker 
+                               Label="Date of Birth"
+                               Immediate="true"
+                               Validation="ValidateDateOfBirth"
+                               HelperText="You must be at least 18 years old to enter." />
                 <MudTextField @bind-Value="userModel.SerialNumber" Label="Serial Number" Disabled="true" />
 
                 <MudButton ButtonType="ButtonType.Button"
@@ -55,6 +62,22 @@
                     Submit
                 </MudButton>
             </MudForm>
+        </MudPaper>
+    }
+
+    <!-- Congratulations section (only when Win Mode is active after submission) -->
+    @if (formSubmitted && winModeActive)
+    {
+        <MudPaper Class="pa-6 mt-4 d-flex flex-column align-center justify-center">
+            <MudText Typo="Typo.h5" Color="Color.Success" Class="mb-2">
+                🎉 Congratulations, you won! 🎉
+            </MudText>
+            <MudButton Color="Color.Primary"
+                       Size="Size.Large"
+                       Class="redeem-button"
+                       OnClick="TriggerHarlemShake">
+                Press here to redeem your prize
+            </MudButton>
         </MudPaper>
     }
 
@@ -97,24 +120,21 @@
 
 @code {
     private bool formSubmitted = false;
+    private bool winModeActive = false;
     private SerialInput serialModel = new();
     private UserInput userModel = new();
     private bool serialValid = false;
     private MudForm? userForm;
     private static readonly Regex SerialRegex = new(@"^Win\+(\d{1,3})$", RegexOptions.Compiled);
 
-    public List<Testimonial> testimonials = new()
-    {
+    private List<Testimonial> testimonials =
+    [
         new Testimonial { Author = "Cousin Coyote", Text = "I’ve never caught the Road Runner, but Acme’s rocket roller skates almost got me there!" },
         new Testimonial { Author = "Uncle Coyote", Text = "Acme’s spring catapult gave me the best flight ever." },
         new Testimonial { Author = "Sister Coyote", Text = "I love how creative Acme is—even though I still end up in the canyon." }
-    };
+    ];
 
-    public class SerialInput
-    {
-        public string SerialNumber { get; set; } = string.Empty;
-    }
-
+    public class SerialInput { public string SerialNumber { get; set; } = string.Empty; }
     public class UserInput
     {
         public string FirstName { get; set; } = string.Empty;
@@ -122,22 +142,18 @@
         public string Email { get; set; } = string.Empty;
         public string SerialNumber { get; set; } = string.Empty;
     }
-
-    public class Testimonial
-    {
-        public string Author { get; set; } = string.Empty;
-        public string Text { get; set; } = string.Empty;
-    }
+    public class Testimonial { public string Author { get; set; } = string.Empty; public string Text { get; set; } = string.Empty; }
 
     private async Task SubmitForm()
     {
-        if (userForm is null)
-            return;
-
+        if (userForm is null) return;
         await userForm.Validate();
 
         if (!userForm.IsValid)
+        {
+            Snackbar.Add("Please correct the errors in the form before submitting.", Severity.Error);
             return;
+        }
 
         var submission = new FormSubmission(
             Id: 0,
@@ -151,62 +167,52 @@
 
         if (success)
         {
-            await SerialService.MarkAsUsedAsync(userModel.SerialNumber);
-            formSubmitted = true;
+            Snackbar.Add("Thank you for your submission!", Severity.Success);
 
-            Snackbar.Add("Thank you for your submission! You will hear from us shortly.", Severity.Success);
+            // Check Win Mode
+            winModeActive = await AdminService.IsWinModeActiveAsync();
+            formSubmitted = true;
         }
         else
         {
             Snackbar.Add("An error occurred during submission.", Severity.Error);
         }
     }
-    
-    // Called whenever text changes in the serial input
-    private async Task OnSerialChanged(string value)
+
+    private void OnSerialChanged(string value)
     {
-        var errors = await ValidateSerialFormat(value);
+        var errors = ValidateSerialFormat(value);
         serialValid = !errors.Any();
-        
-        if (serialValid)
-        {
-            userModel.SerialNumber = value;
-        }
+        if (serialValid) userModel.SerialNumber = value;
     }
 
-    // Validator: serial must be Win+0–Win+100
-    // Validator: serial must be Win+0–Win+100 + DB check
-    private async Task<IEnumerable<string>> ValidateSerialFormat(string value)
+    private static IEnumerable<string> ValidateSerialFormat(string value)
     {
-        List<string> errors = new();
-
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            errors.Add("Serial number must not be empty");
-            return errors;
-        }
-
+        List<string> errors = [];
+        if (string.IsNullOrWhiteSpace(value)) { errors.Add("Serial number must not be empty"); return errors; }
         var match = SerialRegex.Match(value);
-        if (!match.Success)
-        {
-            errors.Add("Serial number must start with 'Win+' followed by a number between 0 and 100");
-            return errors;
-        }
-
+        if (!match.Success) { errors.Add("Serial number must start with 'Win+' followed by a number between 0 and 100"); return errors; }
         if (int.TryParse(match.Groups[1].Value, out var number))
         {
-            if (number < 0 || number > 100)
-            {
-                errors.Add("The number in the serial must be between 0 and 100");
-                return errors;
-            }
-        }
-        else
-        {
-            errors.Add("Invalid serial number");
+            if (number is >= 0 and <= 100) return errors;
+            errors.Add("The number in the serial must be between 0 and 100");
             return errors;
         }
-
+        errors.Add("Invalid serial number");
         return errors;
+    }
+
+    private static IEnumerable<string> ValidateDateOfBirth(DateTime? date)
+    {
+        if (!date.HasValue) return ["Date of birth is required"];
+        var today = DateTime.Today;
+        var age = today.Year - date.Value.Year;
+        if (date.Value.Date > today.AddYears(-age)) age--;
+        return age >= 18 ? [string.Empty] : ["You must be at least 18 years old to enter."];
+    }
+
+    private async Task TriggerHarlemShake()
+    {
+        await JS.InvokeVoidAsync("doHarlemShake");
     }
 }

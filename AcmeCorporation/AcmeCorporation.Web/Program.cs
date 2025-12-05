@@ -29,6 +29,7 @@ public class Program
         // --- Services ---
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
+        builder.Services.AddControllers();
 
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddScoped<IdentityRedirectManager>();
@@ -54,8 +55,11 @@ public class Program
 
         builder.Services.AddScoped<ISerialRepository, SerialRepository>();
         builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
+        builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
         builder.Services.AddScoped<ISerialService, SerialService>();
         builder.Services.AddScoped<IFormService, FormService>();
+        builder.Services.AddScoped<IAdminService, AdminService>();
+        
 
         builder.Services.AddMudServices();
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -82,7 +86,7 @@ public class Program
 
             // Business DB
             var businessDb = services.GetRequiredService<BusinessDbContext>();
-            businessDb.Database.Migrate();
+            await businessDb.Database.MigrateAsync();
 
             if (!businessDb.EligibleDrawSerials.Any())
             {
@@ -90,12 +94,12 @@ public class Program
                     new EligibleDrawSerial($"Win+{i}", false, null)
                 );
                 businessDb.EligibleDrawSerials.AddRange(serials);
-                businessDb.SaveChanges();
+                await businessDb.SaveChangesAsync();
             }
 
             // Identity DB
             var authDb = services.GetRequiredService<AuthDbContext>();
-            authDb.Database.Migrate();
+            await authDb.Database.MigrateAsync();
 
             // Seed admin user
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
@@ -126,9 +130,10 @@ public class Program
         app.MapRazorComponents<App>()          // Blazor app
             .AddInteractiveServerRenderMode();
         app.MapAdditionalIdentityEndpoints();  // /Account/Login etc.
-
+        app.MapControllers();
+        
         // 4. StatusCodePages (last)
-        app.Run();
+        await app.RunAsync();
     }
 
     private static async Task SeedRoadRunnerUser(UserManager<ApplicationUser> userManager)

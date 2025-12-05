@@ -5,6 +5,7 @@
 @rendermode InteractiveServer
 @inject ISerialService SerialService
 @inject IFormService FormService
+@inject IAdminService AdminService
 @attribute [Authorize]
 
 <MudPaper Class="pa-4">
@@ -92,6 +93,26 @@
 
     </MudTable>
 
+    <!-- Win Mode toggle -->
+    <MudPaper Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6">Win Mode</MudText>
+        <MudSwitch T="bool"
+                   Checked="_winModeActive"
+                   ValueChanged="@(b=>ToggleWinMode(b))"
+                   Color="Color.Primary"
+                   Label="Win Mode" />
+        <MudText Typo="Typo.body1" Class="mt-2">
+            Current status: @(_winModeActive ? "ON" : "OFF")
+        </MudText>
+        
+        <MudSwitch T="bool" Checked="_testFlag" CheckedChanged="val => _testFlag = val" Label="Test Switch" />
+
+    </MudPaper>
+
+    <MudButton Color="Color.Primary" Href="/admin/download-submissions-csv" Target="_blank">
+        Download CSV
+    </MudButton>
+    
     @if (_isLoading)
     {
         <MudText Typo="Typo.body1" Class="mt-4">Loading...</MudText>
@@ -101,20 +122,37 @@
         <MudText Typo="Typo.body1" Class="mt-4">There are no registered serial numbers.</MudText>
     }
 
+    
+    
 </MudPaper>
 
 @code {
+    private bool _testFlag;
     private List<SerialNumberInfo> _validSerials = [];
     private List<FormSubmission> _submissions = [];
     private bool _isLoading = true;
     private int _pageSize = 10;
+    private bool _winModeActive;
 
     protected override async Task OnInitializedAsync()
     {
         var items = await SerialService.GetAllValidSerialNumbers();
         _validSerials = items.OrderBy(s => s.SerialNumber).ToList();
+
         var submissions = await FormService.GetAllParticipantsAsync();
         _submissions = submissions.OrderBy(s => s.Id).ToList();
+
+        _winModeActive = await AdminService.IsWinModeActiveAsync();
         _isLoading = false;
+    }
+
+    private async Task ToggleWinMode(bool value)
+    {
+        if (value)
+            await AdminService.ActivateWinModeAsync();
+        else
+            await AdminService.DeactivateWinModeAsync();
+
+        _winModeActive = value;
     }
 }

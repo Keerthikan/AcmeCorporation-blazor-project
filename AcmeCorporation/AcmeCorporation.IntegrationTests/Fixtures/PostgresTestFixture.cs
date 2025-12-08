@@ -56,10 +56,7 @@ public class PostgresTestFixture : IAsyncLifetime
     {
         await _container.DisposeAsync();
     }
-
-    // -----------------------------
-    // Helpers
-    // -----------------------------
+    
     private static async Task ExecuteSqlScript(string connStr, string path)
     {
         if (!File.Exists(path))

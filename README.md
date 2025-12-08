@@ -85,3 +85,6 @@ This solution follows a clean architecture approach, separating concerns into Co
     ```bash
     dotnet ef database update --project AcmeCorporation.Data --startup-project AcmeCorporation.Web
 
+## Note 
+Since I had some extra time i decided to play a bit with some of the stuff i have thought of any way... 
+
